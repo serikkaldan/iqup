@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IQUP — Тіркелу және Кіру</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <img src="/static/img/logo.png" alt="IQUP Logo">
+      <span class="brand-subtitle">Тарихтан болашаққа • Интеллектуалды сайыс</span>
+    </a>
+  </nav>
+
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="hero">
+      <div>
+        <h1>IQUP Интеллектуалды Платформасына қош келдіңіз!</h1>
+        <p style="margin-top:8px; color:#cbd5e1;">Ойынды бастау және өз деңгейіңізді тексеру үшін алдымен аккаунтқа тіркеліңіз немесе жүйеге кіріңіз.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Тіркелу формасы -->
+      <div class="card">
+        <h2>Жаңа аккаунт тіркеу</h2>
+        <p style="color:var(--text-muted); margin-bottom:14px;">Деректеріңіз PostgreSQL дерекқорында қауіпсіз сақталады.</p>
+        <form method="POST" action="/auth">
+          <input type="hidden" name="action" value="register">
+          <div style="margin-bottom:12px;">
+            <label>Аты-жөніңіз</label>
+            <input type="text" name="full_name" placeholder="Мысалы: Қалдан Серік" required>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label>Электрондық пошта</label>
+            <input type="email" name="email" placeholder="example@mail.kz" required>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label>Құпиясөз</label>
+            <input type="password" name="password" placeholder="Кемінде 6 таңба" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Тіркелу және бастау</button>
+        </form>
+      </div>
+
+      <!-- Кіру формасы -->
+      <div class="card">
+        <h2>Жүйеге кіру</h2>
+        <p style="color:var(--text-muted); margin-bottom:14px;">Бұрын тіркелген болсаңыз, поштаңыз арқылы кіріңіз.</p>
+        <form method="POST" action="/auth">
+          <input type="hidden" name="action" value="login">
+          <div style="margin-bottom:12px;">
+            <label>Электрондық пошта</label>
+            <input type="email" name="email" placeholder="example@mail.kz" required>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label>Құпиясөз</label>
+            <input type="password" name="password" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-accent" style="width:100%;">Аккаунтқа кіру</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

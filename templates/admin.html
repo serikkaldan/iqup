@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IQUP Admin — Басқару панелі</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <img src="/static/img/logo.png" alt="IQUP Logo">
+      <span class="brand-subtitle">Әкімшілік басқару сервері (ADMIN)</span>
+    </a>
+    {% if not login_mode %}
+      <div class="nav-links">
+        <a href="https://lab.local" target="_blank">Негізгі сайтқа өту</a>
+        <a href="/logout" class="btn btn-danger">Шығу</a>
+      </div>
+    {% endif %}
+  </nav>
+
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if login_mode %}
+      <div class="card" style="max-width:460px; margin:40px auto;">
+        <h2>Админ серверіне кіру</h2>
+        <form method="POST" action="/login" style="margin-top:16px;">
+          <div style="margin-bottom:12px;">
+            <label>Логин</label>
+            <input type="text" name="username" placeholder="admin" required>
+          </div>
+          <div style="margin-bottom:16px;">
+            <label>Құпиясөз</label>
+            <input type="password" name="password" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%;">Кіру</button>
+        </form>
+      </div>
+    {% else %}
+      <!-- Жаңа сұрақ қосу -->
+      <div class="card">
+        <h2>Жаңа сұрақ қосу</h2>
+        <form method="POST" action="/questions/add" style="margin-top:12px;">
+          <div class="grid-2">
+            <div>
+              <label>Кезең</label>
+              <select name="stage">
+                <option value="1">1-кезең: Жеңіл (Тест)</option>
+                <option value="2">2-кезең: Сынақ (Логика)</option>
+                <option value="3">3-кезең: Аралас</option>
+                <option value="4">4-кезең: Рас (Блиц)</option>
+                <option value="5">5-кезең: Қорытынды</option>
+              </select>
+            </div>
+            <div>
+              <label>Дұрыс жауап (Міндетті)</label>
+              <input type="text" name="correct_answer" required>
+            </div>
+          </div>
+          <div style="margin-top:12px;">
+            <label>Сұрақ мәтіні</label>
+            <textarea name="question_text" rows="2" required></textarea>
+          </div>
+          <div class="grid-2" style="margin-top:12px;">
+            <div>
+              <label>А нұсқасы (тест болса)</label>
+              <input type="text" name="option_a">
+            </div>
+            <div>
+              <label>Б нұсқасы (тест болса)</label>
+              <input type="text" name="option_b">
+            </div>
+            <div>
+              <label>С нұсқасы (тест болса)</label>
+              <input type="text" name="option_c">
+            </div>
+            <div>
+              <label>Қысқаша кеңес / Түсіндірме</label>
+              <input type="text" name="hint">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" style="margin-top:14px;">Сұрақты базаға қосу</button>
+        </form>
+      </div>
+
+      <!-- Барлық сұрақтарды өзгерту -->
+      <div class="card">
+        <h2>Сұрақтар базасы ({{ questions|length }} сұрақ)</h2>
+        {% for q in questions %}
+          <form method="POST" action="/questions/edit/{{ q.id }}" class="question-box" style="margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong>#{{ q.id }} • {{ q.stage_name }}</strong>
+              <button type="submit" formaction="/questions/delete/{{ q.id }}" class="btn btn-danger">Өшіру</button>
+            </div>
+            <input type="text" name="question_text" value="{{ q.question_text }}" required>
+            <div class="grid-2" style="margin-top:8px;">
+              <input type="text" name="option_a" value="{{ q.option_a or '' }}" placeholder="А нұсқасы">
+              <input type="text" name="option_b" value="{{ q.option_b or '' }}" placeholder="Б нұсқасы">
+              <input type="text" name="option_c" value="{{ q.option_c or '' }}" placeholder="С нұсқасы">
+              <input type="text" name="correct_answer" value="{{ q.correct_answer }}" placeholder="Дұрыс жауап" required>
+            </div>
+            <input type="text" name="hint" value="{{ q.hint or '' }}" placeholder="Кеңес" style="margin-top:8px;">
+            <button type="submit" class="btn btn-accent" style="margin-top:10px;">Өзгерісті сақтау</button>
+          </form>
+        {% endfor %}
+      </div>
+
+      <div class="grid-2">
+        <!-- Тіркелген пайдаланушылар -->
+        <div class="card">
+          <h2>Тіркелген пайдаланушылар ({{ users|length }})</h2>
+          <table>
+            <thead><tr><th>ID</th><th>Аты-жөні</th><th>Пошта</th></tr></thead>
+            <tbody>
+              {% for u in users %}
+                <tr><td>{{ u.id }}</td><td>{{ u.full_name }}</td><td>{{ u.email }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Пайдаланушылар нәтижесі -->
+        <div class="card">
+          <h2>Куиз нәтижелері</h2>
+          <table>
+            <thead><tr><th>Қатысушы</th><th>Кезең</th><th>Нәтиже</th></tr></thead>
+            <tbody>
+              {% for r in results %}
+                <tr><td>{{ r.full_name }}</td><td>{{ r.stage }}-кезең</td><td><strong>{{ r.score }}/{{ r.total }}</strong></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Келген ұсыныстар -->
+      <div class="card">
+        <h2>Пайдаланушылардан келген ұсыныстар</h2>
+        <table>
+          <thead><tr><th>Авторы</th><th>Тақырып</th><th>Ұсыныс мәтіні</th></tr></thead>
+          <tbody>
+            {% for s in suggestions %}
+              <tr><td>{{ s.full_name }} ({{ s.email }})</td><td><strong>{{ s.topic }}</strong></td><td>{{ s.message }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+</body>
+</html>

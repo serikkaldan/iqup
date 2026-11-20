@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IQUP — Интеллектуалды куиз платформасы</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <img src="/static/img/logo.png" alt="IQUP Logo">
+      <span class="brand-subtitle">Тарихтан болашаққа</span>
+    </a>
+    <div class="nav-links">
+      <a href="#quiz-section">Куиз өту</a>
+      <a href="#level-section">Менің деңгейім</a>
+      <a href="#suggest-section">Ұсыныс жазу</a>
+      <a href="#contact-section">Байланыс</a>
+      <span style="color:#38bdf8; font-weight:600;">{{ session.user_name }}</span>
+      <a href="/logout" class="btn btn-danger">Шығу</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Басты баннер және Деңгей -->
+    <div class="hero" id="level-section">
+      <div>
+        <h1>Сәлем, {{ session.user_name }}!</h1>
+        <p style="margin-top:6px; color:#cbd5e1;">Кез келген кезеңді таңдап, біліміңізді сынаңыз және деңгейіңізді көтеріңіз.</p>
+        <small style="color:#94a3b8;">Сервер данасы (Container): <strong>{{ instance }}</strong></small>
+      </div>
+      <div class="level-badge">
+        <div style="font-size:0.85rem; color:#93c5fd;">Сіздің ағымдағы деңгейіңіз:</div>
+        <div style="font-size:1.25rem; font-weight:700; color:#fbbf24; margin:4px 0;">{{ rank }}</div>
+        <div>Жалпы жинаған ұпай: <strong>{{ total_points }}</strong></div>
+      </div>
+    </div>
+
+    <!-- Кезеңдерді таңдау -->
+    <div id="quiz-section">
+      <h2 style="margin-bottom:12px;">Кезеңді таңдаңыз:</h2>
+      <div class="stage-tabs">
+        {% for st in stages %}
+          <a href="/?stage={{ st.stage }}" class="stage-tab {% if st.stage == selected_stage %}active{% endif %}">
+            {{ st.stage_name }}
+          </a>
+        {% endfor %}
+      </div>
+
+      <!-- Куиз сұрақтары -->
+      <div class="card">
+        <form method="POST" action="/submit-quiz">
+          <input type="hidden" name="stage" value="{{ selected_stage }}">
+          {% for q in questions %}
+            <div class="question-box">
+              <h3>{{ loop.index }}. {{ q.question_text }}</h3>
+              {% if q.hint %}
+                <small style="color:#64748b;">Кеңес: {{ q.hint }}</small>
+              {% endif %}
+
+              {% if q.option_a and q.option_b %}
+                <div class="options-list">
+                  <label class="option-label">
+                    <input type="radio" name="q_{{ q.id }}" value="{{ q.option_a }}" required> А) {{ q.option_a }}
+                  </label>
+                  <label class="option-label">
+                    <input type="radio" name="q_{{ q.id }}" value="{{ q.option_b }}"> Б) {{ q.option_b }}
+                  </label>
+                  {% if q.option_c %}
+                  <label class="option-label">
+                    <input type="radio" name="q_{{ q.id }}" value="{{ q.option_c }}"> С) {{ q.option_c }}
+                  </label>
+                  {% endif %}
+                </div>
+              {% else %}
+                <div style="margin-top:10px;">
+                  <input type="text" name="q_{{ q.id }}" placeholder="Жауабыңызды осында жазыңыз..." required>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn btn-primary">Жауаптарды тексеру және сақтау</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Нәтижелер тарихы -->
+      <div class="card">
+        <h2>Менің нәтижелерім</h2>
+        {% if user_results %}
+          <table>
+            <thead>
+              <tr>
+                <th>Кезең</th>
+                <th>Ұпай</th>
+                <th>Уақыты</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in user_results %}
+                <tr>
+                  <td>{{ r.stage_name }}</td>
+                  <td><strong>{{ r.score }} / {{ r.total }}</strong></td>
+                  <td>{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p style="color:var(--text-muted); margin-top:10px;">Әзірге тапсырылған кезеңдер жоқ.</p>
+        {% endif %}
+      </div>
+
+      <!-- Сұрақ авторларына ұсыныс -->
+      <div class="card" id="suggest-section">
+        <h2>Сұрақ авторларына ұсыныс</h2>
+        <p style="color:var(--text-muted); margin-bottom:12px;">Келесі ойындарға қызықты сұрақ немесе идея ұсыныңыз:</p>
+        <form method="POST" action="/suggest">
+          <div style="margin-bottom:12px;">
+            <label>Тақырыбы / Кезең түрі</label>
+            <input type="text" name="topic" placeholder="Мысалы: Қазақ тарихы, Логикалық ребус..." required>
+          </div>
+          <div style="margin-bottom:14px;">
+            <label>Ұсыныс немесе сұрақ мәтіні</label>
+            <textarea name="message" rows="4" placeholder="Сұрағыңызды және дұрыс жауабын жазыңыз..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-accent">Ұсынысты жіберу</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Байланыс және GitHub бөлімі -->
+  <footer class="contact-footer" id="contact-section">
+    <div class="contact-grid">
+      <div>
+        <img src="/static/img/logo.png" alt="IQUP" style="height:48px; margin-bottom:10px;">
+        <p style="color:#94a3b8;">«Тарихтан болашаққа» интеллектуалды білім платформасы.</p>
+      </div>
+      <div>
+        <h3>Байланыс</h3>
+        <p><strong>Мекенжай:</strong> Қорғалжын 25/2, «Қазақстан студенттерінің Альянсы» РСҚ офисі</p>
+        <div class="map-container" style="margin: 12px 0; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d2385.579619939825!2d71.366181!3d51.14713599999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zNTHCsDA4JzQ5LjciTiA3McKwMjEnNTguMyJF!5e1!3m2!1sru!2skz!4v1795181561578!5m2!1sru!2skz" 
+            width="100%" 
+            height="220" 
+            style="border:0; display: block;" 
+            allowfullscreen="" 
+            loading="lazy" 
+            referrerpolicy="strict-origin-when-cross-origin">
+          </iframe>
+        </div>
+        <p><strong>Телефон:</strong> <a href="tel:+77778854185">+7 777 885 41 85</a></p>
+        <p><strong>Пошта:</strong> <a href="mailto:qsa.astana@gmail.com">qsa.astana@gmail.com</a></p>
+      </div>
+      <div>
+        <h3>Әлеуметтік желі және Код</h3>
+        <p><strong>Instagram:</strong> <a href="https://instagram.com/qsa_ask" target="_blank">@qsa_ask</a></p>
+        <p><strong>GitHub репозиторийі:</strong><br>
+          <a href="https://github.com/serikkaldan/iqup" target="_blank">https://github.com/serikkaldan/iqup</a>
+        </p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
